@@ -4,7 +4,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -94,13 +93,11 @@ public class AppSecurityConfig {
 							.mvcMatchers("/user").hasAuthority("SCOPE_usr")
 							.anyRequest().authenticated())
 						.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-						.httpBasic(Customizer.withDefaults())
 						.oauth2ResourceServer(resourseServer -> resourseServer.jwt() )
-						
-						.addFilter(new CustomAuthenticationFilter(authenticationProvider(),  tokenService()))
-						.addFilterBefore(new CustomAuthorizationFilter(tokenService(), 
-								(CustomUsrDetailsService) userDetailsService()), UsernamePasswordAuthenticationFilter.class)
-						.build();
+							.addFilter(new CustomAuthenticationFilter(authenticationProvider(),  tokenService()))
+							.addFilterBefore(new CustomAuthorizationFilter(tokenService(), 
+									(CustomUsrDetailsService) userDetailsService()), UsernamePasswordAuthenticationFilter.class)
+							.build();
 	}
 
 }
