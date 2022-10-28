@@ -2,6 +2,8 @@ package com.nposmak.app.security;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -14,7 +16,6 @@ import org.springframework.security.oauth2.jwt.JwtEncoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtDecoder;
 import org.springframework.security.oauth2.jwt.NimbusJwtEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 import com.nimbusds.jose.jwk.JWK;
 import com.nimbusds.jose.jwk.JWKSet;
@@ -22,8 +23,6 @@ import com.nimbusds.jose.jwk.RSAKey;
 import com.nimbusds.jose.jwk.source.ImmutableJWKSet;
 import com.nimbusds.jose.jwk.source.JWKSource;
 import com.nimbusds.jose.proc.SecurityContext;
-import com.nposmak.app.security.filter.CustomAuthenticationFilter;
-import com.nposmak.app.security.filter.CustomAuthorizationFilter;
 import com.nposmak.app.security.usr_details.CustomUsrDetailsService;
 
 @EnableGlobalMethodSecurity(prePostEnabled = true)
@@ -43,17 +42,19 @@ public class AppSecurityConfig {
 	}
 	
 	@Bean
-    public UserDetailsService userDetailsService() {
+    public UserDetailsService customUserDetailsService() {
         return new CustomUsrDetailsService();
     }
 	
+	
 	@Bean
-	public DaoAuthenticationProvider authenticationProvider() {
-	    DaoAuthenticationProvider authProvider = new DaoAuthenticationProvider();
-	    authProvider.setUserDetailsService(userDetailsService());
-	    authProvider.setPasswordEncoder(passwordEncoder());
-	    return authProvider;
-	}	
+	public AuthenticationManager authManager() {
+        var authProvider = new DaoAuthenticationProvider();
+        authProvider.setUserDetailsService(customUserDetailsService());
+        authProvider.setPasswordEncoder(passwordEncoder());
+        return new ProviderManager(authProvider);
+	}
+	
 	
 	@Bean
 	JwtEncoder jwtEncoder() {
@@ -85,9 +86,6 @@ public class AppSecurityConfig {
 							.anyRequest().authenticated())
 						.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
 						.oauth2ResourceServer(resourseServer -> resourseServer.jwt() )
-							.addFilter(new CustomAuthenticationFilter(authenticationProvider(),  tokenService()))
-							.addFilterBefore(new CustomAuthorizationFilter(tokenService(), 
-									(CustomUsrDetailsService) userDetailsService()), UsernamePasswordAuthenticationFilter.class)
 							.build();
 	}
 
