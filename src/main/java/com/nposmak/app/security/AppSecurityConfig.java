@@ -1,5 +1,6 @@
 package com.nposmak.app.security;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -30,11 +31,18 @@ import com.nposmak.app.security.usr_details.CustomUsrDetailsService;
 @Configuration
 public class AppSecurityConfig {
 	
+	
 	private final RsaProperties rsaKeys;
 	
 	public AppSecurityConfig(RsaProperties rsaKeys) {
 		this.rsaKeys = rsaKeys;
 	}
+	
+	@Autowired
+	private CustomAccessDeniedHandler accessDeniedHandler;
+	
+	@Autowired
+	private CustomAuthEntryPoint authEntryPoint;
 	
 	@Bean
 	public BCryptPasswordEncoder passwordEncoder() {
@@ -45,8 +53,7 @@ public class AppSecurityConfig {
     public UserDetailsService customUserDetailsService() {
         return new CustomUsrDetailsService();
     }
-	
-	
+ 	
 	@Bean
 	public AuthenticationManager authManager() {
         var authProvider = new DaoAuthenticationProvider();
@@ -54,7 +61,6 @@ public class AppSecurityConfig {
         authProvider.setPasswordEncoder(passwordEncoder());
         return new ProviderManager(authProvider);
 	}
-	
 	
 	@Bean
 	JwtEncoder jwtEncoder() {
@@ -78,15 +84,19 @@ public class AppSecurityConfig {
 		
 		return http
 						.csrf(csrf -> csrf.disable())
-						.authorizeRequests(auth -> auth
-							.mvcMatchers("/login").permitAll()
-							.mvcMatchers("/token/refresh").permitAll()
-							.mvcMatchers("/admin").hasAuthority("SCOPE_adm")
-							.mvcMatchers("/user").hasAuthority("SCOPE_usr")
-							.anyRequest().authenticated())
-						.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-						.oauth2ResourceServer(resourseServer -> resourseServer.jwt() )
-							.build();
+						.exceptionHandling()
+						.authenticationEntryPoint(authEntryPoint)
+						.accessDeniedHandler(accessDeniedHandler)
+						.and()
+							.authorizeRequests(auth -> auth
+								.mvcMatchers("/login").permitAll()
+								.mvcMatchers("/token/refresh").permitAll()
+								.mvcMatchers("/admin").hasAuthority("SCOPE_adm")
+								.mvcMatchers("/user").hasAuthority("SCOPE_usr")
+								.anyRequest().authenticated())
+							.sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+							.oauth2ResourceServer(resourseServer -> resourseServer.jwt() )
+								.build();
 	}
 
 }

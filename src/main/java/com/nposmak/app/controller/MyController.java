@@ -8,7 +8,6 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class MyController {
 	
-
 	@GetMapping("/admin")
 	public String homeAdmin(Principal principal) {
 		return "Hello mr. " + principal.getName();

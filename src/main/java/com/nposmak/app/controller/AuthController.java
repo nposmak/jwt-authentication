@@ -50,7 +50,6 @@ public class AuthController {
 				, access_token, refresh_token);
 	}
 	
-	
 	record RefreshTokenResponse(String access_jwt_token, String refresh_jwt_token) {};
 	@GetMapping("/token/refresh")
 	public RefreshTokenResponse refreshToken(HttpServletRequest request) {
@@ -63,7 +62,5 @@ public class AuthController {
 		String refresh_token = tokenService.generateRefreshToken(user);
 		
 		return new RefreshTokenResponse(access_token, refresh_token);
-		
 	}
-	
 }
